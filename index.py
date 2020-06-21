@@ -3,7 +3,7 @@ import threading
 import time
 
 paths = list()
-directory = "D:\Coursework"
+directory = "A:\Coursework"
 
 
 def inverted_index(f, index):
