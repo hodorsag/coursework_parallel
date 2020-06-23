@@ -19,8 +19,9 @@ def inverted_index(plist, index):
                     index[lexem].append(i)
 
 def main():
-    threads = []  # список потоков
-    start = 0 # начало и конец отсчета времени
+    threads = [] # список потоков
+    start = 0 # начало и конец отсчёта времени
+    chunks = []
     end = 0
     index = collections.defaultdict(list) # создаем словарь (ключ и значение) где слово ключ, а список путей - значение
     for d, dirs, files in os.walk(directory): # вносим в один большой список все пути к файлам
@@ -33,18 +34,27 @@ def main():
 
     thread_count = input("Input number of threads: ")
 
-    chunk = len(paths)//int(thread_count) # то, сколько должен будет взять каждый поток
+    chunk = len(paths) // int(thread_count) # то, сколько должен будет взять каждый поток
 
     start = time.time()
 
-    count = int(thread_count)# разование кол-ва потоков из строки в инт
+    count = int(thread_count) # преобразование кол-ва потоков из строки в инт
 
+    if len(paths) % count == 0: # считаем сколько должен будет взять каждый поток
+        for i in range(count + 1):
+            chunks.append(i * chunk)
+    else:
+        for i in range(count):
+            chunks.append(i * chunk)
+        chunks.append(len(paths))
+
+    #print(chunks)
     for id in range(count):
-         process = threading.Thread(target = inverted_index, args = (paths[id*chunk: id*chunk + chunk], index))
-         process.start() # начинаем поток
-         threads.append(process) #запихиваем поток в список потоков
+        process = threading.Thread(target=inverted_index, args=(paths[chunks[id]: + chunks[id + 1]], index)) # создание потока
+        process.start() # начало работы потока
+        threads.append(process) # запихиваем поток в список потоков
 
-    for i in threads:# ждем завершение свех потоков
+    for i in threads: # ждем завершение свех потоков
         i.join()
 
     end = time.time()
