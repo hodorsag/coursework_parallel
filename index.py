@@ -1,89 +1,57 @@
 import os
-import threading
 import time
-
+import collections
+import threading
 paths = list()
-directory = "A:\Coursework"
+directory = "D:\Coursework"
 
 
-def inverted_index(f, index):
-    word = ''
-    with open(f, "r") as file:
-        while True:
-            letter = file.read(1)
-            if letter == '':
-                if len(word) < 4:
-                    word = ''
-                    break
-                else:
-                    if word in index:
-                        if f in index[word]:
-                            word = ''
-                            break
-                        else:
-                            index[word].append(f)
-                            word = ''
-                            break
+def inverted_index(plist, index):
+    for i in plist:
+        with open(i, "r") as f:
+            lexems = f.read().split(" ")
+            for lexem in lexems:
+                for letter in lexem:
+                    if letter.isalpha() or letter == "'":
+                        continue
                     else:
-                        index[word] = list()
-                        index[word].append(f)
-                        word = ''
-                        break
-            if letter.isalpha() or letter == "'":
-                word += letter.lower()
+                        lexem.replace(letter, "")
+                    index[lexem].append(i)
+
+def main():
+    threads = []
+    start = 0
+    end = 0
+    index = collections.defaultdict(list)
+    for d, dirs, files in os.walk(directory):
+        for f in files:
+            if os.path.isdir(f):
+                continue
             else:
-                if len(word) < 4:
-                    word = ''
-                else:
-                    if word in index:
-                        if f in index[word]:
-                            word = ''
-                        else:
-                            index[word].append(f)
-                            word = ''
-                    else:
-                        index[word] = list()
-                        index[word].append(f)
-                        word = ''
+                temp = os.path.join(d, f)
+                paths.append(temp)
 
+    thread_count = input("Input number of threads: ")
 
-index = dict(list())
-thread_id = []
-threads = []
+    chunk = len(paths)//int(thread_count)
 
-for d, dirs, files in os.walk(directory):
-    for f in files:
-        if os.path.isdir(f):
-            continue
-        else:
-            temp = os.path.join(d, f)
-            paths.append(temp)
+    start = time.time()
 
-thread_count = input("Input number of threads: ")
+    count = int(thread_count)
 
-chunk = len(paths)//int(thread_count)
+    for id in range(count):
+         process = threading.Thread(target = inverted_index, args = (paths[id*chunk: id*chunk + chunk], index))
+         process.start()
+         threads.append(process)
 
-for i in range(0, int(thread_count)):
-    thread_id.append(i)
+    for i in threads:
+        i.join()
 
-start = time.process_time()
+    end = time.time()
 
-# for i in range(0, len(paths)):
-#     inverted_index(paths[i], index)
+    result = end - start
 
-for id in thread_id:
-    threads.append(threading.Thread(target=inverted_index, args=(paths[id], index)))
+    print(f"Index size: ", {len(index)}, " Time: ", result)
 
-print(len(threads))
-
-for id in thread_id:
-    threads[id].start()
-
-for id in thread_id:
-    threads[id].join()
-
-end = time.process_time()
-
-result = end - start
-
-print(f"Index size: ", {len(index)}, " Time: ", result)
+if __name__ == "__main__":
+    main()
